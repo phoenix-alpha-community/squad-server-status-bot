@@ -44,13 +44,19 @@ class ServerMessage():
             if queue > 0:
                 player_count_str += f" (+{queue})"
             embed.add_field(name='Player Count', value=player_count_str)
+            embed.color = get_embed_color(players)
 
             # Map, Quicklink
             embed.add_field(name='Map', value=f"{server_info['map']}", inline=True)
             embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}", inline=False)
+
+            # Dynamic image
+            #with open(r"images/bg1.jpg", "rb") as f:
+            #    shit = await channel.send(file=f)
+            #print(shit)
         else:
             # Server offline, use cached name
-            embed = discord.Embed(title=self.name)
+            embed = discord.Embed(title=self.name, color=0x222222)
             embed.add_field(name="Status", value="Offline")
 
         if self.__message_id == -1:
@@ -79,3 +85,14 @@ def translate_map_name(raw_name):
         return "Yehorivka_TC_v1"
     else:
         return raw_name.replace(" ", "_")
+
+
+def get_embed_color(player_count):
+    if player_count >= 80:
+        return 0xee2020 # RED
+    if player_count >= 71:
+        return 0xEE9420 # ORANGE
+    if player_count >= 41:
+        return 0x20EE50 # GREEN
+
+    return 0xEE9420 # ORANGE

@@ -59,8 +59,8 @@ async def update_routine():
             print(f"[{time_str} EST] Updating {config.PORTS}")
 
             await update_messages()
-        except Exception as e:
-            traceback.print_exception(e)
+        except:
+            traceback.print_exc()
 
         await asyncio.sleep(config.UPDATE_INTERVAL_SECONDS)
 
