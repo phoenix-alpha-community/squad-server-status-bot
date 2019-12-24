@@ -13,6 +13,10 @@ class ServerMessage():
 
 
     async def update(self, bot):
+        '''Queries the server information and creates / updates the Discord
+        message.
+        Remember to add the ServerMessage object to the database after creating
+        it.'''
         server_obj = SteamQuery(self.host, self.qport)
         quicklink = f"{self.host}:{self.qport2}"
         server_info = server_obj.query_game_server()
@@ -60,6 +64,8 @@ class ServerMessage():
 
 
     async def delete(self, bot):
+        '''Deletes the Discord message.
+        Remember to delete the ServerMessage object from the database afterwards.'''
         channel = bot.get_channel(config.SERVER_CHANNEL)
         message = await channel.fetch_message(self.__message_id)
         # TODO error handling
@@ -67,6 +73,8 @@ class ServerMessage():
 
 
 def translate_map_name(raw_name):
+    '''Translates map names supplied by SteamQuery into their file names on
+    squadmaps.com'''
     if raw_name == "CAF_Yehorivka_TC_V1":
         return "Yehorivka_TC_v1"
     else:

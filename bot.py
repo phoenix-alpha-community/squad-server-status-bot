@@ -24,7 +24,7 @@ async def on_ready():
 
 async def update_messages():
     db = Database.load()
-    server_messages = db.get_server_messages()
+    server_messages = db.server_messages
 
     # delete unwanted messages
     deleted_messages = set()
