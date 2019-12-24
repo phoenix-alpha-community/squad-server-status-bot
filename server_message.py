@@ -59,23 +59,30 @@ class ServerMessage():
             embed = discord.Embed(title=self.name, color=0x222222)
             embed.add_field(name="Status", value="Offline")
 
-        if self.__message_id == -1:
-            # create new message
-            message = await channel.send(embed=embed)
-            self.__message_id = message.id
-        else:
-            message = await channel.fetch_message(self.__message_id)
-            # TODO error handling
-            await message.edit(embed=embed)
+        if self.__message_id != -1:
+            try:
+                message = await channel.fetch_message(self.__message_id)
+                await message.edit(embed=embed)
+                return
+            except discord.errors.NotFound as e:
+                print(f"[WARN] Deletion of message from server {self.name} "
+                      f"not tracked.")
+
+        # create new message
+        message = await channel.send(embed=embed)
+        self.__message_id = message.id
 
 
     async def delete(self, bot):
         '''Deletes the Discord message.
         Remember to delete the ServerMessage object from the database afterwards.'''
         channel = bot.get_channel(config.SERVER_CHANNEL)
-        message = await channel.fetch_message(self.__message_id)
-        # TODO error handling
-        await message.delete()
+        try:
+            message = await channel.fetch_message(self.__message_id)
+            await message.delete()
+        except discord.errors.NotFound as e:
+            print(f"[WARN] Deletion of message from server {self.name} "
+                    f"not tracked.")
 
 
 def translate_map_name(raw_name):
