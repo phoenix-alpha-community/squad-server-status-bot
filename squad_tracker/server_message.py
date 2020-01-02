@@ -88,10 +88,8 @@ class ServerMessage():
 def translate_map_name(raw_name):
     '''Translates map names supplied by SteamQuery into their file names on
     squadmaps.com'''
-    if raw_name == "CAF_Yehorivka_TC_V1":
-        return "Yehorivka_TC_v1"
-    if raw_name == "CAF_Kamdesh_RAAS_v1":
-        return "Kamdesh_RAAS_v1"
+    if "CAF_" in raw_name:
+        return raw_name.replace("CAF_", "")
     else:
         return raw_name.replace(" ", "_")
 
