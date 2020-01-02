@@ -90,6 +90,8 @@ def translate_map_name(raw_name):
     squadmaps.com'''
     if raw_name == "CAF_Yehorivka_TC_V1":
         return "Yehorivka_TC_v1"
+    if raw_name == "CAF_Kamdesh_RAAS_v1":
+        return "Kamdesh_RAAS_v1"
     else:
         return raw_name.replace(" ", "_")
 
