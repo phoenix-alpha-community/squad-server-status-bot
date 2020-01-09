@@ -1,25 +1,26 @@
+import BTrees
 import config
-import jsonpickle
-import os
+import persistent
+import sys
+import transaction
+import ZODB
+from BTrees.OOBTree import TreeSet
+from dataclasses import dataclass
 
-class Database:
+class _Database(persistent.Persistent):
+
     def __init__(self):
-        self.server_messages = set()
+        self.server_messages = TreeSet()
+        self.popper_job_ids = persistent.list.PersistentList()
 
 
-    def load():
-        '''Returns the database.'''
-        if not os.path.exists(config.DATABASE_FILENAME):
-            Database().save() # empty DB
-        with open(config.DATABASE_FILENAME, "r") as f:
-            db = jsonpickle.loads(f.read())
+sys.stdout.write("Starting database...")
+connection = ZODB.connection(config.DATABASE_FILENAME)
+root = connection.root
+if not hasattr(root, "db"):
+    database = _Database()
+    root.db = database
+    transaction.commit()
 
-        return db
-
-
-    def save(self):
-        '''Saves the specified database.'''
-        jsonpickle.set_encoder_options("json", indent=4, sort_keys=True)
-        jsonpickle.set_preferred_backend("json")
-        with open(config.DATABASE_FILENAME, "w") as f:
-            f.write(jsonpickle.dumps(self))
+sys.stdout.write("done\n")
+db = root.db

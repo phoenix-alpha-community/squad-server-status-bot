@@ -10,6 +10,16 @@ class ServerMessage():
         self.qport = port
         self.qport2 = port + 1
         self.name = "Unknown Server"
+        self.playercount = -1
+
+    def __eq__(self, other):
+        return self.__message_id == other.__message_id
+
+    def __lt__(self, other):
+        return self.__message_id < other.__message_id
+
+    def __hash__(self):
+        return hash(self.__message_id)
 
 
     async def update(self, bot):
@@ -21,7 +31,7 @@ class ServerMessage():
         quicklink = f"{self.host}:{self.qport2}"
         server_info = server_obj.query_game_server()
 
-        channel = bot.get_channel(config.SERVER_CHANNEL)
+        channel = config.server_channel
 
 
         if server_info["online"]:
@@ -49,6 +59,9 @@ class ServerMessage():
             # Map, Quicklink
             embed.add_field(name='Map', value=f"{server_info['map']}", inline=True)
             embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}", inline=False)
+
+            # Save playercount for popper notifications
+            self.playercount = players
 
             # Dynamic image
             #with open(r"images/bg1.jpg", "rb") as f:
