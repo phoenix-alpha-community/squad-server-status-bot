@@ -33,7 +33,7 @@ async def on_ready():
     if new_scheduler:
         db.popper_job_ids.clear()
         for hour in config.SEEDING_PING_TIMES_HOURS_EST:
-            id = scheduling.daily_execute(popper_ping, second=hour) # TODO hours
+            id = scheduling.daily_execute(popper_ping, hour=hour)
             db.popper_job_ids.append(id)
         scheduling.interval_execute(update_messages, [],
                                 interval_seconds=config.UPDATE_INTERVAL_SECONDS)

@@ -29,9 +29,9 @@ MQTT_PUB_USER                   = "PUBLISHER USERNAME HERE"
 MQTT_PUB_PASSWORD               = "PUBLISHER PASSWORD HERE"
 MQTT_TOPIC                      = "squad-tks"
 SERVER_BASE_DIRS                = [
-                                    "C:\servers\Squad_Server",
-                                    "C:\servers\Squad_Server_2",
-                                    "C:\servers\Squad_Server_4",
+                                    r"C:\servers\Squad_Server",
+                                    r"C:\servers\Squad_Server_2",
+                                    r"C:\servers\Squad_Server_4",
                                   ]
 
 # Database and scheduler

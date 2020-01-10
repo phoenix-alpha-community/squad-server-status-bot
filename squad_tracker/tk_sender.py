@@ -58,6 +58,7 @@ class TKMonitor():
                     continue
                 _, name = line.split("=")
                 name = name.replace("\"", "")
+                name = name.strip()
                 return name
 
     ## Parser to find teamkills, map, kill info
@@ -69,9 +70,9 @@ class TKMonitor():
             r"\[(?P<log_id>[0-9]+)\]" # log_id
             r"LogSquad: Player:"
             r"(?P<victim>.*)" # victim
-            r"ActualDamage=.* from "
+            r" ActualDamage=.* from "
             r"(?P<killer>.*)" # killer
-            r"caused by "
+            r" caused by "
             r"BP_(?P<weapon>[^\_]*)\_", # weapon
             line,
         )
@@ -111,8 +112,8 @@ class TKMonitor():
                 return tk
 
     async def tk_follow(self):
-        async for line in tkm.follow():
-            tk = tkm.parse_line(line)
+        async for line in self._log_follow():
+            tk = self.parse_line(line)
             if tk != None:
                 yield tk
 
@@ -135,7 +136,7 @@ async def run_tkm(basedir):
     tkm = TKMonitor(basedir)
     async for tk in tkm.tk_follow():
         payload = jsonpickle.dumps(tk).encode("UTF-8")
-        print(f"[SEND] {payload})
+        print(f"[SEND] {tk}")
         await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
 
 
