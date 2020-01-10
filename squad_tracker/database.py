@@ -10,7 +10,7 @@ from dataclasses import dataclass
 class _Database(persistent.Persistent):
 
     def __init__(self):
-        self.server_messages = TreeSet()
+        self.server_messages = persistent.list.PersistentList()
         self.popper_job_ids = persistent.list.PersistentList()
 
 

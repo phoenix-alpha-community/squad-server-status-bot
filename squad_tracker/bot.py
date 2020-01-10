@@ -4,9 +4,10 @@ import asyncio
 import config
 import discord
 import os.path
-import scheduling
-import traceback
 import pytz
+import scheduling
+import tk_listener
+import traceback
 from BTrees.OOBTree import TreeSet
 from database import db
 from datetime import datetime
@@ -23,6 +24,8 @@ async def on_ready():
     print(bot.user.name)
     print(bot.user.id)
     print('------')
+    await tk_listener.init_tk_listener()
+
     new_scheduler = not os.path.isfile(config.SCHEDULER_DB_FILENAME)
     scheduling.init_scheduler()
 
@@ -30,7 +33,7 @@ async def on_ready():
     if new_scheduler:
         db.popper_job_ids.clear()
         for hour in config.SEEDING_PING_TIMES_HOURS_EST:
-            id = scheduling.daily_execute(popper_ping, second=hour)
+            id = scheduling.daily_execute(popper_ping, second=hour) # TODO hours
             db.popper_job_ids.append(id)
         scheduling.interval_execute(update_messages, [],
                                 interval_seconds=config.UPDATE_INTERVAL_SECONDS)
@@ -41,32 +44,29 @@ async def update_messages():
     time_str = time.strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{time_str} EST] Updating {config.SERVERS}")
 
-    server_messages = set(db.server_messages)
+    # check if the server set changed
+    # if yes, delete and recreate all messages to ensure ordering is correct
+    prev_servers = set([(m.host, m.qport) for m in db.server_messages])
+    new_servers = set(config.SERVERS)
 
-    # delete unwanted messages
-    deleted_messages = set()
-    for m in server_messages:
-        if (m.host, m.qport) not in config.SERVERS:
-           await m.delete(bot)
-           deleted_messages.add(m)
-    server_messages -= deleted_messages
+    if prev_servers != new_servers:
+        db.server_messages.clear()
+        # delete all messages
+        for m in db.server_messages:
+            await m.delete(bot)
 
-    # update existing messages
-    updated_ports = set()
-    for m in server_messages:
-        await m.update(bot)
-        updated_ports.add(m.qport)
-
-    # create new messages
-    for host, qport in config.SERVERS:
-        if qport not in updated_ports:
+        # create new messages
+        for host, qport in config.SERVERS:
             m = ServerMessage(host, qport, bot)
             await m.update(bot)
-            server_messages.add(m)
+            db.server_messages.append(m)
 
-    db.server_messages = TreeSet()
-    for x in server_messages:
-        db.server_messages.add(x)
+        return
+
+    # default case
+    # update existing messages
+    for m in db.server_messages:
+        await m.update(bot)
 
 
 async def popper_ping():
@@ -83,6 +83,7 @@ async def popper_ping():
         f"{config.popper_role.mention} **{next_server} is seeding and needs "
         f"your help!** "
         f"AFKs welcome and any help is appreciated!")
+
 
 if __name__ == "__main__":
     bot.run(config.BOT_TOKEN)
