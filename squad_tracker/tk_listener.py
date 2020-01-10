@@ -1,5 +1,6 @@
 import asyncio
 import config
+import traceback
 from hbmqtt.client import MQTTClient, ClientException
 from hbmqtt.mqtt.constants import QOS_0, QOS_1, QOS_2
 
