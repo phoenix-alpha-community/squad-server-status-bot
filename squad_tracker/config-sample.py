@@ -1,7 +1,5 @@
-# Required settings (must be changed)
 BOT_TOKEN = "BOT TOKEN HERE"
 
-# Optional settings (may be changed)
 BOT_CMD_PREFIX                  = "!"
 MESSAGE_DELETE_DELAY_SECONDS    = 60
 
@@ -34,9 +32,8 @@ SERVER_BASE_DIRS                = [
                                     r"C:\servers\Squad_Server_4",
                                   ]
 
-# Database and scheduler
+# Database
 DATABASE_FILENAME               = "database.fs"
-SCHEDULER_DB_FILENAME           = "scheduler-db.sqlite"
 
 
 #####################################

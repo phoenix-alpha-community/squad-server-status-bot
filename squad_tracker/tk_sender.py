@@ -8,6 +8,7 @@ import urllib3
 from datetime import datetime
 from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0, QOS_1, QOS_2
+from pytz import timezone
 from teamkill import TeamKill
 from tzlocal import get_localzone
 
@@ -102,13 +103,12 @@ class TKMonitor():
                 time_str = dmg.group("time")
                 time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
                 time_local = get_localzone().localize(time_naive)
-                time_est = time_local.astimezone(config.TIMEZONE)
-                timestamp_est = time_est.timestamp()
+                time_utc = time_local.astimezone(timezone("UTC"))
                 victim = dmg.group("victim")
                 killer = dmg.group("killer")
                 weapon = dmg.group("weapon")
                 servername = self._get_servername()
-                tk = TeamKill(timestamp_est, victim, killer, weapon, servername)
+                tk = TeamKill(time_utc, victim, killer, weapon, servername)
                 return tk
 
     async def tk_follow(self):

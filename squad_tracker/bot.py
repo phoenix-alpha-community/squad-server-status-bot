@@ -8,6 +8,7 @@ import pytz
 import scheduling
 import tk_listener
 import traceback
+import transaction
 from BTrees.OOBTree import TreeSet
 from database import db
 from datetime import datetime
@@ -26,17 +27,15 @@ async def on_ready():
     print('------')
     await tk_listener.init_tk_listener()
 
-    new_scheduler = not os.path.isfile(config.SCHEDULER_DB_FILENAME)
     scheduling.init_scheduler()
 
     # schedule tasks
-    if new_scheduler:
-        db.popper_job_ids.clear()
-        for hour in config.SEEDING_PING_TIMES_HOURS_EST:
-            id = scheduling.daily_execute(popper_ping, hour=hour)
-            db.popper_job_ids.append(id)
-        scheduling.interval_execute(update_messages, [],
-                                interval_seconds=config.UPDATE_INTERVAL_SECONDS)
+    db.popper_job_ids.clear()
+    for hour in config.SEEDING_PING_TIMES_HOURS_EST:
+        id = scheduling.daily_execute(popper_ping, hour=hour)
+        db.popper_job_ids.append(id)
+    scheduling.interval_execute(update_messages, [],
+                            interval_seconds=config.UPDATE_INTERVAL_SECONDS)
 
 
 async def update_messages():
@@ -67,6 +66,8 @@ async def update_messages():
     # update existing messages
     for m in db.server_messages:
         await m.update(bot)
+
+    transaction.commit()
 
 
 async def popper_ping():

@@ -4,12 +4,11 @@ import pytz
 import sys
 import transaction
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.jobstores.memory import MemoryJobStore
 from datetime import datetime, timedelta
 
 jobstores = {
-    'default': SQLAlchemyJobStore(
-        url='sqlite:///' + config.SCHEDULER_DB_FILENAME)
+    'default': MemoryJobStore() # no persistent jobs
 }
 
 _scheduler = None
@@ -19,11 +18,7 @@ def init_scheduler():
     config has been initialized.'''
     sys.stdout.write("Starting scheduler...")
     global _scheduler
-    _scheduler = AsyncIOScheduler(jobstores=jobstores,
-            job_defaults={
-                'misfire_grace_time': None
-            }
-    )
+    _scheduler = AsyncIOScheduler(jobstores=jobstores)
     _scheduler.start()
     sys.stdout.write("done\n")
 

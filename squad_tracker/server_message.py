@@ -1,8 +1,9 @@
 import config
 import discord
+import persistent
 from steam import SteamQuery
 
-class ServerMessage():
+class ServerMessage(persistent.Persistent):
 
     def __init__(self, host, port, bot):
         self.__message_id = -1
@@ -11,6 +12,7 @@ class ServerMessage():
         self.qport2 = port + 1
         self.name = "Unknown Server"
         self.playercount = -1
+        self.cur_map = "Unknown Map"
 
     def __eq__(self, other):
         return self.__message_id == other.__message_id
@@ -58,6 +60,7 @@ class ServerMessage():
 
             # Map, Quicklink
             embed.add_field(name='Map', value=f"{server_info['map']}", inline=True)
+            self.cur_map = server_info['map']
             embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}", inline=False)
 
             # Save playercount for popper notifications
@@ -108,11 +111,10 @@ def translate_map_name(raw_name):
 
 
 def get_embed_color(player_count):
-    if player_count >= 80:
-        return 0xee2020 # RED
-    if player_count >= 71:
-        return 0xEE9420 # ORANGE
     if player_count >= 41:
-        return 0x20EE50 # GREEN
+        return 0x20EE50 # GREEN, popped
+    if player_count >= 1:
+        return 0xEE9420 # ORANGE, not popped
+    if player_count == 0:
+        return 0xee2020 # RED, dead
 
-    return 0xEE9420 # ORANGE

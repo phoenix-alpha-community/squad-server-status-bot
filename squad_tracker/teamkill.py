@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 @dataclass
 class TeamKill():
-    timestamp_est : int
+    time_utc : datetime
     victim : str
     killer : str
     weapon : str
