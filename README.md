@@ -4,7 +4,7 @@ the Fear and Terror Squad servers.
 
 ## Overview
 - **Server status message**.
-The bot will post and update status message in regular intervals in a
+The bot will post and update status messages in regular intervals in a
 configurable channel for a configurable set of servers.
 
 ![Image](images/server-status.png)
