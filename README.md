@@ -6,12 +6,14 @@ the Fear and Terror Squad servers.
 - **Server status message**.
 The bot will post and update status message in regular intervals in a
 configurable channel for a configurable set of servers.
-[Image](images/server-status.png)
+
+![Image](images/server-status.png)
 
 - **Pings for the seeding team**.
 The bot will ping the seeding team at configurable times of day if any of the
 server are not yet popped.
-[Image](images/seeding.png)
+
+![Image](images/seeding.png)
 
 - **TK tracker**.
 The bot will make a post in the TK channel for each team kill that occurs on
@@ -20,7 +22,8 @@ To capture team kills, a small part of the bot (`tk_sender.py`) must be run
 on the server machine.
 The bot and the sending script communicate via an MQTT broker, allowing
 mulitple sender and listener instances.
-[Image](images/tk.png)
+
+![Image](images/tk.png)
 
 ## Installation
 1. Clone this repository to:
