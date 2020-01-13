@@ -19,7 +19,6 @@ async def listener(client):
             packet = message.publish_packet
             assert packet.variable_header.topic_name == config.MQTT_TOPIC
             data = packet.payload.data.decode("UTF-8")
-            print(f"[MQTT] {data}") # TODO remove
             tk = jsonpickle.loads(data)
             await log_tk(tk)
         except Exception as e:

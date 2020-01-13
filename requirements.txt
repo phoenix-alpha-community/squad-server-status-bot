@@ -6,5 +6,4 @@ BTrees
 pytz
 transaction
 apscheduler
-sqlalchemy
 hbmqtt

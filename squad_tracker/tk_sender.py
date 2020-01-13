@@ -21,6 +21,8 @@ class TKMonitor():
         self.log_filename = basedir + "\SquadGame\Saved\Logs\SquadGame.log"
         self.config_filename = basedir + "\SquadGame\ServerConfig\Server.cfg"
         self.recent_damages = []
+        self.seen_tks = set()
+        self.last_log_id = 0
 
 
     def _open_log_file(self):
@@ -97,6 +99,15 @@ class TKMonitor():
         if team_kill == None:
             return None
 
+        # delete duplicate info on log id wrap-around
+        if int(team_kill.group("log_id")) + 500 < self.last_log_id:
+            self.seen_tks.clear()
+        self.last_log_id = int(team_kill.group("log_id"))
+
+        # check for duplicate
+        if team_kill.group("log_id") in self.seen_tks:
+            return None
+
         # match log IDs
         for dmg in self.recent_damages:
             if dmg.group("log_id") == team_kill.group("log_id"):
@@ -109,6 +120,10 @@ class TKMonitor():
                 weapon = dmg.group("weapon")
                 servername = self._get_servername()
                 tk = TeamKill(time_utc, victim, killer, weapon, servername)
+
+                # remember log ID of last TK to avoid duplicates
+                self.seen_tks.add(team_kill.group("log_id"))
+
                 return tk
 
     async def tk_follow(self):
