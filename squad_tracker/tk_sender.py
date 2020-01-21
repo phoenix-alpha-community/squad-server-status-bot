@@ -66,8 +66,23 @@ class TKMonitor():
 
     ## Parser to find teamkills, map, kill info
     def parse_line(self, line):
+        '''Returns TK object if TK occurred, `None` otherwise.'''
 
-        # try matching log line to damage format
+        # try matching to admin cam usage format
+        if self._match_admincam(line):
+            return None
+
+        # try matching to damage format
+        if self._match_damage(line):
+            return None
+
+        # try matching to teamkill format
+        return self._match_teamkill(line)
+
+    def _match_damage(self, line):
+        '''Returns `True` if line was a damage notification,
+        `False` otherwise.'''
+
         actual_damage = re.search(
             r"\[(?P<time>[^\]]+)\]" # time
             r"\[(?P<log_id>[0-9]+)\]" # log_id
@@ -81,14 +96,18 @@ class TKMonitor():
         )
 
         # remember damage
-        if actual_damage != None:
-            self.recent_damages.append(actual_damage)
-            # only track the last 20 damages
-            if len(self.recent_damages) > 20:
-                del self.recent_damages[0]
-            return None
+        if actual_damage == None:
+            return False
 
-        # try matching log line to teamkillformat
+        self.recent_damages.append(actual_damage)
+        # only track the last 20 damages
+        if len(self.recent_damages) > 20:
+            del self.recent_damages[0]
+        return True # matched
+
+    def _match_teamkill(self, line):
+        '''Returns TK object if TK occurred, `None` otherwise.'''
+
         team_kill = re.search(
             r"\[(?P<log_id>[0-9]+)\]" # log_id
             r"[^\n]*"
@@ -125,6 +144,52 @@ class TKMonitor():
                 self.seen_tks.add(team_kill.group("log_id"))
 
                 return tk
+
+    def _match_admincam(self, line):
+        change = None
+
+        match = re.search(
+            r"\[(?P<time>[^\]]+)\]" # time
+            r"[^\n]*"
+            r"ASQPlayerController::Possess"
+            r"[^\n]*"
+            r"PC=(?P<user>.*)" # user
+            r"[^\n]*"
+            r"Pawn=CameraMan_C_" # admin cam
+            line,
+        )
+
+        if match != None:
+            change = "+++ ENTER"
+
+        match = re.search(
+            r"\[(?P<time>[^\]]+)\]" # time
+            r"[^\n]*"
+            r"ASQPlayerController::UnPossess"
+            r"[^\n]*"
+            r"PC=(?P<user>.*)" # user
+            line,
+        )
+
+        if match != None:
+            change = "--- LEAVE"
+
+        if change == None:
+            return False
+
+        time_str = on_match.group("time")
+        time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
+        time_local = get_localzone().localize(time_naive)
+        time_est = time_local.astimezone(config.TIMEZONE)
+        time_str_est = time_est.strftime("%Y.%m.%d - %H:%M:%S")
+        user = on_match.group("user")
+        log_message = f"[{time_str_est}] {change}: {user}"
+
+        with open(config.ADMINCAM_LOG_FILENAME, "a") as f:
+            f.write(log_message + "\n")
+
+        return True
+
 
     async def tk_follow(self):
         async for line in self._log_follow():

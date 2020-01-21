@@ -32,8 +32,9 @@ SERVER_BASE_DIRS                = [
                                     r"C:\servers\Squad_Server_4",
                                   ]
 
-# Database
+# Database, Admincam log
 DATABASE_FILENAME               = "database.fs"
+ADMINCAM_LOG_FILENAME           = "admincam.log"
 
 
 #####################################
