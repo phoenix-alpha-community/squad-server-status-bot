@@ -41,12 +41,12 @@ async def on_ready():
 async def update_messages():
     time = datetime.now(config.TIMEZONE)
     time_str = time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{time_str} EST] Updating {config.SERVERS}")
+    print(f"[{time_str} EST] Updating server messages")
 
     # check if the server set changed
     # if yes, delete and recreate all messages to ensure ordering is correct
     prev_servers = set([(m.host, m.qport) for m in db.server_messages])
-    new_servers = set(config.SERVERS)
+    new_servers = set([(s.host, s.qport) for s in config.servers])
 
     if prev_servers != new_servers:
         db.server_messages.clear()
@@ -55,8 +55,8 @@ async def update_messages():
             await m.delete(bot)
 
         # create new messages
-        for host, qport in config.SERVERS:
-            m = ServerMessage(host, qport, bot)
+        for server in config.servers:
+            m = ServerMessage(server.host, server.qport, bot)
             await m.update(bot)
             db.server_messages.append(m)
 

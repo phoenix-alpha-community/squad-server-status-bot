@@ -24,6 +24,7 @@ async def listener(client):
         except Exception as e:
             traceback.print_exc(e)
 
+
 async def log_tk(tk : TeamKill):
     # Create embed
     embed = discord.Embed(title=f"TK on {tk.servername}")
@@ -43,7 +44,7 @@ async def log_tk(tk : TeamKill):
     # Get map from cached server message
     cur_map = "Unknown"
     for m in db.server_messages:
-        if m.name == tk.servername:
+        if m.host == tk.server_host and m.qport == tk.server_qport:
             cur_map = m.cur_map
     embed.add_field(name='Map', value=cur_map, inline=True)
 
@@ -54,8 +55,17 @@ async def log_tk(tk : TeamKill):
     # Weapon
     embed.add_field(name='Weapon', value=tk.weapon, inline=True)
 
+    tk_channel = None
+    for server in config.server:
+        if server.host == tk.server_host and server.qport == tk.server_qport:
+            tk_channel = server.tk_channel
+            break
 
-    await config.tk_channel.send(embed=embed)
+    if tk_channel is None:
+        print(f"[WARN] Got TK from unknown server: "
+              f"{tk.server_host}:{tk.server_qport}")
+
+    await tk_channel.send(embed=embed)
 
 
 async def init_tk_listener():

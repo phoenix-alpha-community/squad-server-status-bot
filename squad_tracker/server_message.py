@@ -92,7 +92,7 @@ class ServerMessage(persistent.Persistent):
     async def delete(self, bot):
         '''Deletes the Discord message.
         Remember to delete the ServerMessage object from the database afterwards.'''
-        channel = bot.get_channel(config.SERVER_CHANNEL)
+        channel = config.server_channel
         try:
             message = await channel.fetch_message(self.__message_id)
             await message.delete()

@@ -16,13 +16,14 @@ mqtt_client = None
 
 class TKMonitor():
 
-    def __init__(self, basedir):
+    def __init__(self, host, qport, basedir):
         self.basedir = basedir
         self.log_filename = basedir + "\SquadGame\Saved\Logs\SquadGame.log"
-        self.config_filename = basedir + "\SquadGame\ServerConfig\Server.cfg"
         self.recent_damages = []
         self.seen_tks = set()
         self.last_log_id = 0
+        self.server_host = host
+        self.server_qport = qport
 
 
     def _open_log_file(self):
@@ -53,16 +54,6 @@ class TKMonitor():
             except IOError:
                 pass
             await asyncio.sleep(1)
-
-    def _get_servername(self):
-        with open(self.config_filename, "r") as config_file:
-            for line in config_file:
-                if not line.startswith("ServerName="):
-                    continue
-                _, name = line.split("=")
-                name = name.replace("\"", "")
-                name = name.strip()
-                return name
 
     ## Parser to find teamkills, map, kill info
     def parse_line(self, line):
@@ -137,8 +128,8 @@ class TKMonitor():
                 victim = dmg.group("victim")
                 killer = dmg.group("killer")
                 weapon = dmg.group("weapon")
-                servername = self._get_servername()
-                tk = TeamKill(time_utc, victim, killer, weapon, servername)
+                tk = TeamKill(time_utc, victim, killer, weapon,
+                              self.server_host, self.server_qport)
 
                 # remember log ID of last TK to avoid duplicates
                 self.seen_tks.add(team_kill.group("log_id"))
@@ -212,8 +203,8 @@ async def init_mqtt():
     print("MQTT connected!")
 
 
-async def run_tkm(basedir):
-    tkm = TKMonitor(basedir)
+async def run_tkm(host, qport, basedir):
+    tkm = TKMonitor(host, qport, basedir)
     async for tk in tkm.tk_follow():
         payload = jsonpickle.dumps(tk).encode("UTF-8")
         print(f"[SEND] {tk}")
@@ -223,8 +214,8 @@ async def run_tkm(basedir):
 async def main():
     await init_mqtt()
     tasks = []
-    for basedir in config.SERVER_BASE_DIRS:
-        tasks.append(asyncio.create_task(run_tkm(basedir)))
+    for server in config.servers:
+        tasks.append(asyncio.create_task(run_tkm(host, qport, basedir)))
 
     for t in tasks:
         await t

@@ -7,5 +7,6 @@ class TeamKill():
     victim : str
     killer : str
     weapon : str
-    servername : str
+    server_host : str
+    server_qport : int
 
