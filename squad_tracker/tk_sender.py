@@ -18,12 +18,15 @@ class TKMonitor():
 
     def __init__(self, host, qport, basedir):
         self.basedir = basedir
-        self.log_filename = basedir + "\SquadGame\Saved\Logs\SquadGame.log"
+        self.log_filename = basedir + r"\SquadGame\Saved\Logs\SquadGame.log"
+        self.admincam_log_filename = basedir + r"\SquadGame\Saved\Logs\admincam.log"
         self.recent_damages = []
         self.seen_tks = set()
         self.last_log_id = 0
         self.server_host = host
         self.server_qport = qport
+        self.buffered_admin_cam_log = None
+        self.active_admin_cam_users = set()
 
 
     def _open_log_file(self):
@@ -139,45 +142,88 @@ class TKMonitor():
     def _match_admincam(self, line):
         change = None
 
+        # check for buffered message
+        #   This is done to weed out dying - one of multiple events that also
+        #   fire Unpossess
+        #   When dying, a second similar Unpossess message is logged right
+        #   afterwards
         match = re.search(
             r"\[(?P<time>[^\]]+)\]" # time
+            r"\[(?P<log_id>[0-9]+)\]" # log_id
+            r"[^\n]*"
+            r"ASQPlayerController::UnPossess"
+            r"[^\n]*"
+            r"PC=(?P<user>.*)" # user
+            r" current health value " # false positive identifier
+            ,
+            line,
+        )
+
+        if match != None:
+            self.buffered_admin_cam_log = None
+            return False
+
+        # if there was no false-positive indicator, commit buffered log
+        if self.buffered_admin_cam_log is not None:
+            with open(self.admincam_log_filename, "a") as f:
+                f.write(self.buffered_admin_cam_log + "\n")
+            print(f"[ADMIN CAM][{self.server_qport}]"
+                  f"{self.buffered_admin_cam_log}")
+            self.buffered_admin_cam_log = None
+
+        # check for possess
+        match = re.search(
+            r"\[(?P<time>[^\]]+)\]" # time
+            r"\[(?P<log_id>[0-9]+)\]" # log_id
             r"[^\n]*"
             r"ASQPlayerController::Possess"
             r"[^\n]*"
-            r"PC=(?P<user>.*)" # user
+            r"PC=(?P<user>.*) " # user
             r"[^\n]*"
             r"Pawn=CameraMan_C_" # admin cam
+            ,
             line,
         )
 
         if match != None:
             change = "+++ ENTER"
+            user = match.group("user")
+            self.active_admin_cam_users.add(user)
+        else:
+            # check for unpossess
+            match = re.search(
+                r"\[(?P<time>[^\]]+)\]" # time
+                r"\[(?P<log_id>[0-9]+)\]" # log_id
+                r"[^\n]*"
+                r"ASQPlayerController::UnPossess"
+                r"[^\n]*"
+                r"PC=(?P<user>.*)" # user
+                ,
+                line,
+            )
 
-        match = re.search(
-            r"\[(?P<time>[^\]]+)\]" # time
-            r"[^\n]*"
-            r"ASQPlayerController::UnPossess"
-            r"[^\n]*"
-            r"PC=(?P<user>.*)" # user
-            line,
-        )
+            if match != None:
+                change = "--- POSSIBLE LEAVE"
+                user = match.group("user")
+                if user not in self.active_admin_cam_users:
+                    # false positive
+                    return False
+                else:
+                    self.active_admin_cam_users.remove(user)
 
-        if match != None:
-            change = "--- LEAVE"
-
-        if change == None:
+        if change is None:
             return False
 
-        time_str = on_match.group("time")
+        time_str = match.group("time")
         time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
         time_local = get_localzone().localize(time_naive)
         time_est = time_local.astimezone(config.TIMEZONE)
         time_str_est = time_est.strftime("%Y.%m.%d - %H:%M:%S")
-        user = on_match.group("user")
+        user = match.group("user")
         log_message = f"[{time_str_est}] {change}: {user}"
 
-        with open(config.ADMINCAM_LOG_FILENAME, "a") as f:
-            f.write(log_message + "\n")
+        # buffer message
+        self.buffered_admin_cam_log = log_message
 
         return True
 
@@ -215,7 +261,8 @@ async def main():
     await init_mqtt()
     tasks = []
     for server in config.servers:
-        tasks.append(asyncio.create_task(run_tkm(host, qport, basedir)))
+        tasks.append(asyncio.create_task(
+            run_tkm(server.host, server.qport, server.base_dir)))
 
     for t in tasks:
         await t

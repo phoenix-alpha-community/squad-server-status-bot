@@ -37,11 +37,21 @@ ADMINCAM_LOG_FILENAME           = "admincam.log"
 # DO NOT EDIT BELOW
 #####################################
 
-import discord
 import pytz
 from dataclasses import dataclass
 
 TIMEZONE = pytz.timezone("US/Eastern")
+
+@dataclass
+class Server():
+    host : str
+    qport : int
+    base_dir : str
+    tk_channel_id : int
+
+servers = []
+for host, qport, base_dir, tk_channel_id in SERVER_DETAILS:
+    servers.append(Server(host, qport, base_dir, tk_channel_id))
 
 def init_config(_bot):
     global bot
@@ -53,17 +63,3 @@ def init_config(_bot):
     guild = popper_channel.guild
     global popper_role
     popper_role = guild.get_role(POPPER_ROLE_ID)
-
-    global servers
-    servers = []
-    for host, qport, base_dir, tk_channel_id in SERVER_DETAILS:
-        tk_channel = bot.get_channel(tk_channel_id)
-        servers.append(Server(host, qport, base_dir, tk_channel))
-
-@dataclass
-class Server():
-    host : str
-    qport : int
-    base_dir : str
-    tk_channel_id : discord.TextChannel
-

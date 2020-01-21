@@ -26,8 +26,28 @@ async def listener(client):
 
 
 async def log_tk(tk : TeamKill):
+
+    # Get TK channel from config
+    tk_channel = None
+    for server in config.servers:
+        if server.host == tk.server_host and server.qport == tk.server_qport:
+            tk_channel_id = server.tk_channel_id
+            break
+    tk_channel = config.bot.get_channel(tk_channel_id)
+
+    if tk_channel is None:
+        print(f"[WARN] Got TK from unknown server: "
+              f"{tk.server_host}:{tk.server_qport}")
+
+    # Get map and name from cached server message
+    cur_map = "Unknown"
+    for m in db.server_messages:
+        if m.host == tk.server_host and m.qport == tk.server_qport:
+            cur_map = m.cur_map
+            server_name = m.name
+
     # Create embed
-    embed = discord.Embed(title=f"TK on {tk.servername}")
+    embed = discord.Embed(title=f"TK on {server_name}")
 
     # Time (EST)
     time_utc = tk.time_utc
@@ -41,11 +61,6 @@ async def log_tk(tk : TeamKill):
         time_utc_str += " (+1 day)"
     embed.add_field(name='Time (UTC)', value=time_utc_str, inline=True)
 
-    # Get map from cached server message
-    cur_map = "Unknown"
-    for m in db.server_messages:
-        if m.host == tk.server_host and m.qport == tk.server_qport:
-            cur_map = m.cur_map
     embed.add_field(name='Map', value=cur_map, inline=True)
 
     # Killer
@@ -54,16 +69,6 @@ async def log_tk(tk : TeamKill):
     embed.add_field(name='Victim', value=tk.victim, inline=True)
     # Weapon
     embed.add_field(name='Weapon', value=tk.weapon, inline=True)
-
-    tk_channel = None
-    for server in config.server:
-        if server.host == tk.server_host and server.qport == tk.server_qport:
-            tk_channel = server.tk_channel
-            break
-
-    if tk_channel is None:
-        print(f"[WARN] Got TK from unknown server: "
-              f"{tk.server_host}:{tk.server_qport}")
 
     await tk_channel.send(embed=embed)
 
