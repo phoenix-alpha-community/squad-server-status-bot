@@ -25,7 +25,6 @@ class TKMonitor():
         self.last_log_id = 0
         self.server_host = host
         self.server_qport = qport
-        self.buffered_admin_cam_log = None
         self.active_admin_cam_users = set()
 
 
@@ -140,36 +139,10 @@ class TKMonitor():
                 return tk
 
     def _match_admincam(self, line):
+        '''Returns `True` if line was admin cam usage,
+        `False` otherwise.'''
+
         change = None
-
-        # check for buffered message
-        #   This is done to weed out dying - one of multiple events that also
-        #   fire Unpossess
-        #   When dying, a second similar Unpossess message is logged right
-        #   afterwards
-        match = re.search(
-            r"\[(?P<time>[^\]]+)\]" # time
-            r"\[(?P<log_id>[0-9]+)\]" # log_id
-            r"[^\n]*"
-            r"ASQPlayerController::UnPossess"
-            r"[^\n]*"
-            r"PC=(?P<user>.*)" # user
-            r" current health value " # false positive identifier
-            ,
-            line,
-        )
-
-        if match != None:
-            self.buffered_admin_cam_log = None
-            return False
-
-        # if there was no false-positive indicator, commit buffered log
-        if self.buffered_admin_cam_log is not None:
-            with open(self.admincam_log_filename, "a") as f:
-                f.write(self.buffered_admin_cam_log + "\n")
-            print(f"[ADMIN CAM][{self.server_qport}]"
-                  f"{self.buffered_admin_cam_log}")
-            self.buffered_admin_cam_log = None
 
         # check for possess
         match = re.search(
@@ -186,7 +159,7 @@ class TKMonitor():
         )
 
         if match != None:
-            change = "+++ ENTER"
+            change = "++++++++++++ ENTER"
             user = match.group("user")
             self.active_admin_cam_users.add(user)
         else:
@@ -220,10 +193,11 @@ class TKMonitor():
         time_est = time_local.astimezone(config.TIMEZONE)
         time_str_est = time_est.strftime("%Y.%m.%d - %H:%M:%S")
         user = match.group("user")
-        log_message = f"[{time_str_est}] {change}: {user}"
+        log_message = f"[{time_str_est} EST] {change}: {user}"
 
-        # buffer message
-        self.buffered_admin_cam_log = log_message
+        with open(self.admincam_log_filename, "a") as f:
+            f.write(log_message + "\n")
+        print(f"[ADMIN CAM][{self.server_qport}]{log_message}")
 
         return True
 
