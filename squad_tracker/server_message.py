@@ -101,13 +101,21 @@ class ServerMessage(persistent.Persistent):
                     f"not tracked.")
 
 
-def translate_map_name(raw_name):
+def translate_map_name(name):
     '''Translates map names supplied by SteamQuery into their file names on
     squadmaps.com'''
-    if "CAF_" in raw_name:
-        return raw_name.replace("CAF_", "")
-    else:
-        return raw_name.replace(" ", "_")
+    # Strip prefixes
+    name = name.replace("CAF_", "")
+    name = name.replace("SPM_", "")
+    name = name.replace("HC_", "")
+
+    # Replace spaces
+    name = name.replace(" ", "_")
+
+    # Change some map names
+    name = name.replace("LogarValley", "Logar_Valley")
+
+    return name
 
 
 def get_embed_color(player_count):
@@ -117,4 +125,3 @@ def get_embed_color(player_count):
         return 0xEE9420 # ORANGE, not popped
     if player_count == 0:
         return 0xee2020 # RED, dead
-
