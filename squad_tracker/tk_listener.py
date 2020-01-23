@@ -41,6 +41,7 @@ async def log_tk(tk : TeamKill):
 
     # Get map and name from cached server message
     cur_map = "Unknown"
+    server_name = "Unknown"
     for m in db.server_messages:
         if m.host == tk.server_host and m.qport == tk.server_qport:
             cur_map = m.cur_map

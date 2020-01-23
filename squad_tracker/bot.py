@@ -36,6 +36,7 @@ async def on_ready():
         db.popper_job_ids.append(id)
     scheduling.interval_execute(update_messages, [],
                             interval_seconds=config.UPDATE_INTERVAL_SECONDS)
+    await update_messages()
 
 
 async def update_messages():

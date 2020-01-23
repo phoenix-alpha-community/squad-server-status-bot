@@ -2,9 +2,11 @@ import asyncio
 import config
 import jsonpickle
 import logging
+import msvcrt
 import os
 import re
 import urllib3
+import win32file
 from datetime import datetime
 from hbmqtt.client import MQTTClient
 from hbmqtt.mqtt.constants import QOS_0, QOS_1, QOS_2
@@ -29,7 +31,25 @@ class TKMonitor():
 
 
     def _open_log_file(self):
-        f = open(self.log_filename, "r", encoding="utf8")
+        # source:
+        # https://www.thepythoncorner.com/2016/10/python-how-to-open-a-file-on-windows-without-locking-it/
+        # get an handle using win32 API, specifying the SHARED access!
+        handle = win32file.CreateFile(self.log_filename,
+                                        win32file.GENERIC_READ,
+                                        win32file.FILE_SHARE_DELETE |
+                                        win32file.FILE_SHARE_READ |
+                                        win32file.FILE_SHARE_WRITE,
+                                        None,
+                                        win32file.OPEN_EXISTING,
+                                        0,
+                                        None)
+        # detach the handle
+        detached_handle = handle.Detach()
+        # get a file descriptor associated to the handle
+        file_descriptor = msvcrt.open_osfhandle(
+            detached_handle, os.O_RDONLY)
+        # open the file descriptor
+        f = open(file_descriptor)
         # seek to end
         f.seek(0, os.SEEK_END)
         file_id = os.fstat(f.fileno()).st_ino
@@ -125,8 +145,8 @@ class TKMonitor():
             if dmg.group("log_id") == team_kill.group("log_id"):
                 time_str = dmg.group("time")
                 time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
-                time_local = get_localzone().localize(time_naive)
-                time_utc = time_local.astimezone(timezone("UTC"))
+                # Timestamps are UTC
+                time_utc = timezone("UTC").localize(time_naive)
                 victim = dmg.group("victim")
                 killer = dmg.group("killer")
                 weapon = dmg.group("weapon")
@@ -189,8 +209,9 @@ class TKMonitor():
 
         time_str = match.group("time")
         time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
-        time_local = get_localzone().localize(time_naive)
-        time_est = time_local.astimezone(config.TIMEZONE)
+        # Timestamps are UTC
+        time_utc = timezone("UTC").localize(time_naive)
+        time_est = time_utc.astimezone(config.TIMEZONE)
         time_str_est = time_est.strftime("%Y.%m.%d - %H:%M:%S")
         user = match.group("user")
         log_message = f"[{time_str_est} EST] {change}: {user}"
