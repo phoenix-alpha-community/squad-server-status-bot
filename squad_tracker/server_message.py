@@ -114,6 +114,7 @@ def translate_map_name(name):
 
     # Change some map names
     name = name.replace("LogarValley", "Logar_Valley")
+    name = name.replace("FoolsRoad_AAS_v2", "Fool's_Road_AAS_v1")
 
     return name
 
