@@ -74,7 +74,8 @@ async def update_messages():
 async def popper_ping():
     # get name of server that should be popped next
     next_server = None
-    for m in db.server_messages:
+    for i in config.SEEDING_PING_ORDER:
+        m = db.server_messages[i]
         if m.playercount < config.POPPING_PLAYER_THRESHOLD:
             next_server = m.name
             break

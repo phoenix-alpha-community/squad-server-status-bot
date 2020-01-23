@@ -49,7 +49,7 @@ class TKMonitor():
         file_descriptor = msvcrt.open_osfhandle(
             detached_handle, os.O_RDONLY)
         # open the file descriptor
-        f = open(file_descriptor)
+        f = open(file_descriptor, encoding="UTF-8")
         # seek to end
         f.seek(0, os.SEEK_END)
         file_id = os.fstat(f.fileno()).st_ino
