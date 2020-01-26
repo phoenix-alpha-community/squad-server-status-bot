@@ -5,6 +5,7 @@ import logging
 import msvcrt
 import os
 import re
+import sys
 import urllib3
 import win32file
 from datetime import datetime
@@ -63,7 +64,11 @@ class TKMonitor():
         while True:
             # read until end of file
             while True:
-                line = f.readline()
+                try:
+                    line = f.readline()
+                except UnicodeDecodeError as e:
+                    sys.stderr.write("[WARN] Skipped line because of decode error")
+                    line = "DECODE_ERROR"
                 if not line:
                     break
                 yield line
