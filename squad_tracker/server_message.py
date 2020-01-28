@@ -11,7 +11,6 @@ class ServerMessage(persistent.Persistent):
         self.qport = port
         self.qport2 = port + 1
         self.name = "Unknown Server"
-        self.playercount = -1
         self.cur_map = "Unknown Map"
 
     def __eq__(self, other):
@@ -63,9 +62,6 @@ class ServerMessage(persistent.Persistent):
             embed.add_field(name='Map', value=f"{server_info['map']}", inline=True)
             self.cur_map = server_info['map']
             embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}", inline=False)
-
-            # Save playercount for popper notifications
-            self.playercount = players
 
             # Dynamic image
             #with open(r"images/bg1.jpg", "rb") as f:

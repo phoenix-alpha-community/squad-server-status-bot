@@ -30,10 +30,6 @@ async def on_ready():
     scheduling.init_scheduler()
 
     # schedule tasks
-    db.popper_job_ids.clear()
-    for hour in config.SEEDING_PING_TIMES_HOURS_EST:
-        id = scheduling.daily_execute(popper_ping, hour=hour)
-        db.popper_job_ids.append(id)
     scheduling.interval_execute(update_messages, [],
                             interval_seconds=config.UPDATE_INTERVAL_SECONDS)
     await update_messages()
@@ -69,23 +65,6 @@ async def update_messages():
         await m.update(bot)
 
     transaction.commit()
-
-
-async def popper_ping():
-    # get name of server that should be popped next
-    next_server = None
-    for i in config.SEEDING_PING_ORDER:
-        m = db.server_messages[i]
-        if m.playercount < config.POPPING_PLAYER_THRESHOLD:
-            next_server = m.name
-            break
-    if next_server is None:
-        return # no server needs popping
-
-    await config.popper_channel.send(
-        f"{config.popper_role.mention} **{next_server} is seeding and needs "
-        f"your help!** "
-        f"AFKs welcome and any help is appreciated!")
 
 
 if __name__ == "__main__":

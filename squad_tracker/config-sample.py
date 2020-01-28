@@ -6,13 +6,6 @@ MESSAGE_DELETE_DELAY_SECONDS    = 60
 UPDATE_INTERVAL_SECONDS         = 60
 SERVER_INFO_CHANNEL_ID          = 665048711403143168
 
-# Seeding pings
-SEEDING_PING_TIMES_HOURS_EST    = [12, 16, 20] # 12pm, 4pm, 8pm
-POPPER_CHANNEL_ID               = 665048726003384360
-POPPER_ROLE_ID                  = 664857094331301931
-POPPING_PLAYER_THRESHOLD        = 30
-SEEDING_PING_ORDER              = [2,0,1] # Indices in SERVER_DETAILS
-
 # TK tracker
 MQTT_ADDRESS                    = ("MQTT BROKER IP HERE", 1883)
 MQTT_SUB_USER                   = "SUBSCRIBER USERNAME HERE"
@@ -59,8 +52,3 @@ def init_config(_bot):
     bot = _bot
     global server_channel
     server_channel = bot.get_channel(SERVER_INFO_CHANNEL_ID)
-    global popper_channel
-    popper_channel = bot.get_channel(POPPER_CHANNEL_ID)
-    guild = popper_channel.guild
-    global popper_role
-    popper_role = guild.get_role(POPPER_ROLE_ID)
