@@ -239,12 +239,12 @@ class TKMonitor():
 async def init_mqtt():
     '''Must be called after config is initialized.'''
     global mqtt_client
-    config = {
+    mqtt_config = {
         'auto_reconnect': True,
         'reconnect_max_interval': 10,
         'reconnect_retries': 1000000,
     }
-    mqtt_client = MQTTClient(config=config)
+    mqtt_client = MQTTClient(config=mqtt_config)
 
     user = config.MQTT_PUB_USER
     password = config.MQTT_PUB_PASSWORD
