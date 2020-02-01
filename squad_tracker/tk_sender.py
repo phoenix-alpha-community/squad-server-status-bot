@@ -6,10 +6,11 @@ import msvcrt
 import os
 import re
 import sys
+import traceback
 import urllib3
 import win32file
 from datetime import datetime
-from hbmqtt.client import MQTTClient
+from hbmqtt.client import MQTTClient, ClientException
 from hbmqtt.mqtt.constants import QOS_0, QOS_1, QOS_2
 from pytz import timezone
 from teamkill import TeamKill
@@ -67,7 +68,7 @@ class TKMonitor():
                 try:
                     line = f.readline()
                 except UnicodeDecodeError as e:
-                    sys.stderr.write("[WARN] Skipped line because of decode error")
+                    sys.stderr.write("[WARN] Skipped line because of decode error\n")
                     line = "DECODE_ERROR"
                 if not line:
                     break
@@ -238,7 +239,12 @@ class TKMonitor():
 async def init_mqtt():
     '''Must be called after config is initialized.'''
     global mqtt_client
-    mqtt_client = MQTTClient()
+    config = {
+        'auto_reconnect': True,
+        'reconnect_max_interval': 10,
+        'reconnect_retries': 1000000,
+    }
+    mqtt_client = MQTTClient(config=config)
 
     user = config.MQTT_PUB_USER
     password = config.MQTT_PUB_PASSWORD
@@ -250,11 +256,28 @@ async def init_mqtt():
 
 
 async def run_tkm(host, qport, basedir):
+    global mqtt_client
     tkm = TKMonitor(host, qport, basedir)
     async for tk in tkm.tk_follow():
+        if mqtt_client is None:
+            try:
+                await init_mqtt()
+            except e:
+                sys.stderr.write("[ERROR] [{qport}] Exception in init_mqtt\n")
+                traceback.print_exc(e)
+                sys.stderr.write("[ERROR] [{qport}] <<< End of exception\n")
+
         payload = jsonpickle.dumps(tk).encode("UTF-8")
         print(f"[SEND] {tk}")
-        await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
+
+        try:
+            await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
+        except e:
+            sys.stderr.write("[ERROR] [{qport}] Exception in mqtt_client.publish\n")
+            traceback.print_exc(e)
+            sys.stderr.write("[ERROR] [{qport}] <<< End of exception\n")
+            mqtt_client = None
+
 
 
 async def main():
