@@ -61,6 +61,8 @@ class TKMonitor():
     ## Generate the lines in the text file as they are created
     async def _log_follow(self):
         f, file_id = self._open_log_file()
+        debug_log = open(f"debug-log-{self.server_qport}.log", "a",
+                         encoding="UTF-8")
         # read indefinitely
         while True:
             # read until end of file
@@ -72,10 +74,12 @@ class TKMonitor():
                     line = "DECODE_ERROR"
                 if not line:
                     break
+                debug_log.write(line)
                 yield line
             try:
                 # check if file has been replaced
                 if os.stat(self.log_filename).st_ino != file_id:
+                    debug_log.write(">>>>> LOG FILE CHANGED <<<<<\n")
                     # close and re-open
                     f.close()
                     f, file_id = self._open_log_file()
