@@ -31,8 +31,20 @@ class TKMonitor():
         self.server_qport = qport
         self.active_admin_cam_users = set()
 
+        # logger
+        LOG_LEVEL = logging.DEBUG
+        LOG_FILE = f"debug-{qport}.log"
+
+        logger = logging.getLogger(f"tkm-{qport}")
+        logger.setLevel(LOG_LEVEL)
+        logger_file_handler = logging.FileHandler(LOG_FILE, encoding="UTF-8")
+        logger_file_handler.setLevel(LOG_LEVEL)
+        logger.addHandler(logger_file_handler)
+        self.logger = logger
+
 
     def _open_log_file(self):
+        self.logger.debug("(Re-)Opening server log file...")
         # source:
         # https://www.thepythoncorner.com/2016/10/python-how-to-open-a-file-on-windows-without-locking-it/
         # get an handle using win32 API, specifying the SHARED access!
@@ -56,13 +68,12 @@ class TKMonitor():
         f.seek(0, os.SEEK_END)
         file_id = os.fstat(f.fileno()).st_ino
 
+        self.logger.debug(f"Opened server log file. ID: {file_id}")
         return (f, file_id)
 
     ## Generate the lines in the text file as they are created
     async def _log_follow(self):
         f, file_id = self._open_log_file()
-        debug_log = open(f"debug-log-{self.server_qport}.log", "a",
-                         encoding="UTF-8")
         # read indefinitely
         while True:
             # read until end of file
@@ -72,24 +83,28 @@ class TKMonitor():
                 except UnicodeDecodeError as e:
                     sys.stderr.write("[WARN] Skipped line because of decode error\n")
                     line = "DECODE_ERROR"
+                    self.logger.debug(f"[LINE_READ] DECODE_ERROR")
                 if not line:
                     break
-                debug_log.write(line)
+                self.logger.debug(f"[LINE_READ][READ]{line}")
                 yield line
             try:
                 # check if file has been replaced
                 if os.stat(self.log_filename).st_ino != file_id:
-                    debug_log.write(">>>>> LOG FILE CHANGED <<<<<\n")
+                    self.logger.debug(f"[LINE_READ] FILE_CHANGED")
                     # close and re-open
                     f.close()
                     f, file_id = self._open_log_file()
             except IOError:
                 pass
+            self.logger.debug(f"[LINE_READ] GOING_TO_SLEEP")
             await asyncio.sleep(1)
+            self.logger.debug(f"[LINE_READ] WOKE_UP")
 
     ## Parser to find teamkills, map, kill info
     def parse_line(self, line):
         '''Returns TK object if TK occurred, `None` otherwise.'''
+        self.logger.debug(f"[PARSE] START")
 
         # try matching to admin cam usage format
         if self._match_admincam(line):
@@ -105,6 +120,7 @@ class TKMonitor():
     def _match_damage(self, line):
         '''Returns `True` if line was a damage notification,
         `False` otherwise.'''
+        self.logger.debug(f"[DAMAGE] ?")
 
         actual_damage = re.search(
             r"\[(?P<time>[^\]]+)\]" # time
@@ -120,16 +136,20 @@ class TKMonitor():
 
         # remember damage
         if actual_damage == None:
+            self.logger.debug(f"[DAMAGE] -")
             return False
+        self.logger.debug(f"[DAMAGE] +")
 
         self.recent_damages.append(actual_damage)
         # only track the last 20 damages
+        self.logger.debug(f"[DAMAGE] recent size {len(self.recent_damages)}")
         if len(self.recent_damages) > 20:
             del self.recent_damages[0]
         return True # matched
 
     def _match_teamkill(self, line):
         '''Returns TK object if TK occurred, `None` otherwise.'''
+        self.logger.debug(f"[TEAMKILL] ?")
 
         team_kill = re.search(
             r"\[(?P<log_id>[0-9]+)\]" # log_id
@@ -139,20 +159,26 @@ class TKMonitor():
         )
 
         if team_kill == None:
+            self.logger.debug(f"[TEAMKILL] -")
             return None
+        self.logger.debug(f"[TEAMKILL] +")
 
         # delete duplicate info on log id wrap-around
         if int(team_kill.group("log_id")) + 500 < self.last_log_id:
+            self.logger.debug(f"[TEAMKILL] WRAP_AROUND")
             self.seen_tks.clear()
         self.last_log_id = int(team_kill.group("log_id"))
 
         # check for duplicate
         if team_kill.group("log_id") in self.seen_tks:
+            self.logger.debug(f"[TEAMKILL] DUPLICATE")
             return None
+        self.logger.debug(f"[TEAMKILL] NEW")
 
         # match log IDs
         for dmg in self.recent_damages:
             if dmg.group("log_id") == team_kill.group("log_id"):
+                self.logger.debug(f"[TEAMKILL] MATCH FOUND")
                 time_str = dmg.group("time")
                 time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
                 # Timestamps are UTC
@@ -171,6 +197,7 @@ class TKMonitor():
     def _match_admincam(self, line):
         '''Returns `True` if line was admin cam usage,
         `False` otherwise.'''
+        self.logger.debug(f"[ADMIN_CAM] ENTER ?")
 
         change = None
 
@@ -189,10 +216,13 @@ class TKMonitor():
         )
 
         if match != None:
+            self.logger.debug(f"[ADMIN_CAM] ENTER +")
             change = "++++++++++++ ENTER"
             user = match.group("user")
             self.active_admin_cam_users.add(user)
         else:
+            self.logger.debug(f"[ADMIN_CAM] ENTER -")
+            self.logger.debug(f"[ADMIN_CAM] LEAVE ?")
             # check for unpossess
             match = re.search(
                 r"\[(?P<time>[^\]]+)\]" # time
@@ -206,6 +236,7 @@ class TKMonitor():
             )
 
             if match != None:
+                self.logger.debug(f"[ADMIN_CAM] LEAVE +")
                 change = "--- POSSIBLE LEAVE"
                 user = match.group("user")
                 if user not in self.active_admin_cam_users:
@@ -213,9 +244,12 @@ class TKMonitor():
                     return False
                 else:
                     self.active_admin_cam_users.remove(user)
+            self.logger.debug(f"[ADMIN_CAM] LEAVE -")
 
         if change is None:
+            self.logger.debug(f"[ADMIN_CAM] -")
             return False
+        self.logger.debug(f"[ADMIN_CAM] +")
 
         time_str = match.group("time")
         time_naive = datetime.strptime(time_str, "%Y.%m.%d-%H.%M.%S:%f")
@@ -226,22 +260,31 @@ class TKMonitor():
         user = match.group("user")
         log_message = f"[{time_str_est} EST] {change}: {user}"
 
-        with open(self.admincam_log_filename, "a") as f:
+        self.logger.debug(f"[ADMIN_CAM] Opening admincam log")
+        with open(self.admincam_log_filename, "a", encoding="UTF-8") as f:
+            self.logger.debug(f"[ADMIN_CAM] Writing admincam log")
             f.write(log_message + "\n")
+            self.logger.debug(f"[ADMIN_CAM] Done writing to admincam log")
+        self.logger.debug(f"[ADMIN_CAM] Closed admincam log")
         print(f"[ADMIN CAM][{self.server_qport}]{log_message}")
 
         return True
 
 
     async def tk_follow(self):
+        self.logger.debug(f"[FOLLOW] START")
         async for line in self._log_follow():
+            self.logger.debug(f"[FOLLOW] GOT_LINE")
             tk = self.parse_line(line)
             if tk != None:
+                self.logger.debug(f"[FOLLOW] TK+")
                 yield tk
+            self.logger.debug(f"[FOLLOW] TK-")
 
 
 async def init_mqtt():
     '''Must be called after config is initialized.'''
+    logging.debug(f"[MQTT_INIT] START")
     global mqtt_client
     mqtt_config = {
         'auto_reconnect': True,
@@ -254,14 +297,15 @@ async def init_mqtt():
     password = config.MQTT_PUB_PASSWORD
     host, port = config.MQTT_ADDRESS
     url = f"mqtt://{user}:{password}@{host}:{port}/"
-    print("MQTT connecting...")
+    logging.info(f"[MQTT_INIT] CONNECT_START")
     await mqtt_client.connect(url)
-    print("MQTT connected!")
+    logging.info(f"[MQTT_INIT] CONNECT_DONE")
 
 
 async def run_tkm(host, qport, basedir):
     global mqtt_client
     tkm = TKMonitor(host, qport, basedir)
+    logging.debug("Creating TKMs")
     async for tk in tkm.tk_follow():
         if mqtt_client is None:
             try:
@@ -272,7 +316,7 @@ async def run_tkm(host, qport, basedir):
                 sys.stderr.write("[ERROR] [{qport}] <<< End of exception\n")
 
         payload = jsonpickle.dumps(tk).encode("UTF-8")
-        print(f"[SEND] {tk}")
+        logging.info(f"[SEND] {tk}")
 
         try:
             await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
@@ -296,4 +340,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    logger_file_handler = logging.FileHandler("main.log", encoding="UTF-8")
+    logger_file_handler.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.INFO, handlers=[logger_file_handler])
     asyncio.run(main())
