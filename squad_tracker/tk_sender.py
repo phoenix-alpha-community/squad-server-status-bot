@@ -37,14 +37,17 @@ class TKMonitor():
 
         logger = logging.getLogger(f"tkm-{qport}")
         logger.setLevel(LOG_LEVEL)
-        logger_file_handler = logging.FileHandler(LOG_FILE, encoding="UTF-8")
-        logger_file_handler.setLevel(LOG_LEVEL)
-        logger.addHandler(logger_file_handler)
+        file_handler = logging.FileHandler(LOG_FILE, encoding="UTF-8")
+        file_handler.setLevel(LOG_LEVEL)
+        logger.addHandler(file_handler)
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(logging.DEBUG)
+        logger.addHandler(stream_handler)
         self.logger = logger
 
 
     def _open_log_file(self):
-        self.logger.debug("(Re-)Opening server log file...")
+        self.logger.debug("[FILE] (Re-)Opening server log file...")
         # source:
         # https://www.thepythoncorner.com/2016/10/python-how-to-open-a-file-on-windows-without-locking-it/
         # get an handle using win32 API, specifying the SHARED access!
@@ -68,7 +71,7 @@ class TKMonitor():
         f.seek(0, os.SEEK_END)
         file_id = os.fstat(f.fileno()).st_ino
 
-        self.logger.debug(f"Opened server log file. ID: {file_id}")
+        self.logger.debug(f"[FILE] Opened server log file. ID: {file_id}")
         return (f, file_id)
 
     ## Generate the lines in the text file as they are created
@@ -90,13 +93,15 @@ class TKMonitor():
                 yield line
             try:
                 # check if file has been replaced
-                if os.stat(self.log_filename).st_ino != file_id:
+                cur = os.stat(self.log_filename).st_ino
+                self.logger.debug(f"[LINE_READ] [FILE_NO] {cur} -- {file_id}")
+                if cur != file_id:
                     self.logger.debug(f"[LINE_READ] FILE_CHANGED")
                     # close and re-open
                     f.close()
                     f, file_id = self._open_log_file()
-            except IOError:
-                pass
+            except IOError as e:
+                self.logger.warn(f"[LINE_READ] [EXCEPTION] {e}")
             self.logger.debug(f"[LINE_READ] GOING_TO_SLEEP")
             await asyncio.sleep(1)
             self.logger.debug(f"[LINE_READ] WOKE_UP")
