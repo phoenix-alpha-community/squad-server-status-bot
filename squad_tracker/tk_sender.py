@@ -18,6 +18,12 @@ from tzlocal import get_localzone
 
 mqtt_client = None
 
+
+def _get_file_id(filename):
+    #return os.fstat(f.fileno()).st_ino # FILE_INDEX on Windows. Not unique?
+    # Use creation time instead (should suffice to notice file replacement)
+    return os.path.getctime(filename)
+
 class TKMonitor():
 
     def __init__(self, host, qport, basedir):
@@ -40,9 +46,6 @@ class TKMonitor():
         file_handler = logging.FileHandler(LOG_FILE, encoding="UTF-8")
         file_handler.setLevel(LOG_LEVEL)
         logger.addHandler(file_handler)
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.DEBUG)
-        logger.addHandler(stream_handler)
         self.logger = logger
 
 
@@ -69,14 +72,16 @@ class TKMonitor():
         f = open(file_descriptor, encoding="UTF-8")
         # seek to end
         f.seek(0, os.SEEK_END)
-        file_id = os.fstat(f.fileno()).st_ino
 
-        self.logger.debug(f"[FILE] Opened server log file. ID: {file_id}")
-        return (f, file_id)
+        size = os.fstat(f.fileno()).st_size
+
+        self.logger.debug(f"[FILE] Opened server log file. Size: {size}")
+        return (f, size)
 
     ## Generate the lines in the text file as they are created
     async def _log_follow(self):
-        f, file_id = self._open_log_file()
+        f, file_size = self._open_log_file()
+        linecounter = 0
         # read indefinitely
         while True:
             # read until end of file
@@ -89,17 +94,21 @@ class TKMonitor():
                     self.logger.debug(f"[LINE_READ] DECODE_ERROR")
                 if not line:
                     break
+                # update file size every 1000 lines
+                if linecounter == 0:
+                    file_size = os.fstat(f.fileno()).st_size
+                linecounter = (linecounter + 1) % 1000
                 self.logger.debug(f"[LINE_READ][READ]{line}")
                 yield line
             try:
-                # check if file has been replaced
-                cur = os.stat(self.log_filename).st_ino
-                self.logger.debug(f"[LINE_READ] [FILE_NO] {cur} -- {file_id}")
-                if cur != file_id:
-                    self.logger.debug(f"[LINE_READ] FILE_CHANGED")
+                # check if file has been truncated
+                cur_size = os.fstat(f.fileno()).st_size
+                self.logger.debug(f"[LINE_READ] [FILE_SIZE] {cur_size} -- {file_size}")
+                if cur_size < file_size:
+                    self.logger.debug(f"[LINE_READ] FILE_TRUNCATED")
                     # close and re-open
                     f.close()
-                    f, file_id = self._open_log_file()
+                    f, file_size = self._open_log_file()
             except IOError as e:
                 self.logger.warn(f"[LINE_READ] [EXCEPTION] {e}")
             self.logger.debug(f"[LINE_READ] GOING_TO_SLEEP")
@@ -289,7 +298,7 @@ class TKMonitor():
 
 async def init_mqtt():
     '''Must be called after config is initialized.'''
-    logging.debug(f"[MQTT_INIT] START")
+    logging.info(f"[MQTT_INIT] START")
     global mqtt_client
     mqtt_config = {
         'auto_reconnect': True,
@@ -345,7 +354,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    logger_file_handler = logging.FileHandler("main.log", encoding="UTF-8")
-    logger_file_handler.setLevel(logging.DEBUG)
-    logging.basicConfig(level=logging.INFO, handlers=[logger_file_handler])
+    file_handler = logging.FileHandler("main.log", encoding="UTF-8")
+    file_handler.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.INFO)
+    logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
     asyncio.run(main())
