@@ -5,11 +5,12 @@ from steam import SteamQuery
 
 class ServerMessage(persistent.Persistent):
 
-    def __init__(self, host, port, bot):
+    def __init__(self, host, qport, game_port, bot):
         self.__message_id = -1
         self.host = host
-        self.qport = port
-        self.qport2 = port + 1
+        self.qport = qport
+        self.qport2 = qport + 1
+        self.game_port = game_port
         self.name = "Unknown Server"
         self.cur_map = "Unknown Map"
 
@@ -29,7 +30,7 @@ class ServerMessage(persistent.Persistent):
         Remember to add the ServerMessage object to the database after creating
         it.'''
         server_obj = SteamQuery(self.host, self.qport)
-        quicklink = f"{self.host}:{self.qport2}"
+        quicklink = f"{self.host}:{self.game_port}"
         server_info = server_obj.query_game_server()
         print(self.qport, server_info)
 

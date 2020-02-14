@@ -53,7 +53,7 @@ async def update_messages():
 
         # create new messages
         for server in config.servers:
-            m = ServerMessage(server.host, server.qport, bot)
+            m = ServerMessage(server.host, server.qport, server.game_port, bot)
             await m.update(bot)
             db.server_messages.append(m)
 

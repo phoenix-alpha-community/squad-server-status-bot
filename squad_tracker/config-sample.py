@@ -16,10 +16,11 @@ MQTT_TOPIC                      = "squad-tks"
 
 # Server details
 SERVER_DETAILS                  = [
-    # HOST          , QPORT, BASE DIRECTORY              , TK CHANNEL
-    ("167.88.11.228", 27165, r"C:\servers\Squad_Server",   665048744219115520),
-    ("167.88.11.228", 27175, r"C:\servers\Squad_Server_2", 669304088248188949),
-    ("167.88.11.228", 27195, r"C:\servers\Squad_Server_4", 669304112684335124),
+    # HOST          , QPORT, GAME_PORT, BASE DIRECTORY              , TK CHANNEL
+    ("167.88.11.228", 27165, 7787     , r"C:\servers\squad_server_1", 605830904677400600), # public 1 (NYC)
+    ("104.194.8.111", 27165, 7787     , r"C:\servers\squad_server_1", 605830952660238372), # public 2 (LA)
+    ("104.194.8.111", 27195, 7790     , r"C:\servers\squad_server_3", 605830969110560785), # public 3 (LA)
+    ("185.38.151.16", 27165, 7787     , r"C:\servers\squad_server_1", 605830969110560785), # public EU
 ]
 
 # Database
@@ -40,12 +41,13 @@ TIMEZONE = pytz.timezone("US/Eastern")
 class Server():
     host : str
     qport : int
+    game_port : int
     base_dir : str
     tk_channel_id : int
 
 servers = []
-for host, qport, base_dir, tk_channel_id in SERVER_DETAILS:
-    servers.append(Server(host, qport, base_dir, tk_channel_id))
+for host, qport, game_port, base_dir, tk_channel_id in SERVER_DETAILS:
+    servers.append(Server(host, qport, game_port, base_dir, tk_channel_id))
 
 def init_config(_bot):
     global bot
