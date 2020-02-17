@@ -32,7 +32,7 @@ class ServerMessage(persistent.Persistent):
         server_obj = SteamQuery(self.host, self.qport)
         quicklink = f"{self.host}:{self.game_port}"
         server_info = server_obj.query_game_server()
-        print(self.name, self.host, self.qport, server_info)
+        #print(self.name, self.host, self.qport, server_info)
 
         channel = config.server_channel
 

@@ -27,6 +27,8 @@ async def listener(client):
 
 async def log_tk(tk : TeamKill):
 
+    print("[TK]", tk)
+
     # Get TK channel from config
     tk_channel = None
     for server in config.servers:
