@@ -30,7 +30,7 @@ class ServerMessage(persistent.Persistent):
         Remember to add the ServerMessage object to the database after creating
         it.'''
         server_obj = SteamQuery(self.host, self.qport)
-        quicklink = f"{self.host}:{self.game_port}"
+        quicklink = f"{self.host}:{self.qport}"
         server_info = server_obj.query_game_server()
         #print(self.name, self.host, self.qport, server_info)
 
