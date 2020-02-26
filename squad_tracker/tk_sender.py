@@ -16,8 +16,6 @@ from pytz import timezone
 from teamkill import TeamKill
 from tzlocal import get_localzone
 
-mqtt_client = None
-
 
 def _get_file_id(filename):
     #return os.fstat(f.fileno()).st_ino # FILE_INDEX on Windows. Not unique?
@@ -296,14 +294,13 @@ class TKMonitor():
             self.logger.debug(f"[FOLLOW] TK-")
 
 
-async def init_mqtt():
-    '''Must be called after config is initialized.'''
-    logging.info(f"[MQTT_INIT] START")
-    global mqtt_client
+async def send_mqtt(payload):
+    '''Publishes the payload on the configured topic.'''
+    logging.info(f"[MQTT_SEND] START")
     mqtt_config = {
         'auto_reconnect': True,
         'reconnect_max_interval': 10,
-        'reconnect_retries': 1000000,
+        'reconnect_retries': 10,
     }
     mqtt_client = MQTTClient(config=mqtt_config)
 
@@ -311,39 +308,31 @@ async def init_mqtt():
     password = config.MQTT_PUB_PASSWORD
     host, port = config.MQTT_ADDRESS
     url = f"mqtt://{user}:{password}@{host}:{port}/"
-    logging.info(f"[MQTT_INIT] CONNECT_START")
+    logging.info(f"[MQTT_SEND] CONNECT_START")
     await mqtt_client.connect(url)
-    logging.info(f"[MQTT_INIT] CONNECT_DONE")
+    logging.info(f"[MQTT_SEND] MQTT_SENDING")
+    await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
+    logging.info(f"[MQTT_SEND] DISCONNECTING")
+    await mqtt_client.disconnect()
+    logging.info(f"[MQTT_SEND] DONE")
 
 
 async def run_tkm(host, qport, basedir):
-    global mqtt_client
     tkm = TKMonitor(host, qport, basedir)
     logging.debug("Creating TKMs")
     async for tk in tkm.tk_follow():
-        if mqtt_client is None:
-            try:
-                await init_mqtt()
-            except e:
-                sys.stderr.write("[ERROR] [{qport}] Exception in init_mqtt\n")
-                traceback.print_exc(e)
-                sys.stderr.write("[ERROR] [{qport}] <<< End of exception\n")
-
         payload = jsonpickle.dumps(tk).encode("UTF-8")
         logging.info(f"[SEND] {tk}")
 
         try:
-            await mqtt_client.publish(config.MQTT_TOPIC, payload, qos=QOS_2)
+            await send_mqtt(payload)
         except e:
-            sys.stderr.write("[ERROR] [{qport}] Exception in mqtt_client.publish\n")
+            sys.stderr.write("[ERROR] [{qport}] Exception in send_mqtt\n")
             traceback.print_exc(e)
             sys.stderr.write("[ERROR] [{qport}] <<< End of exception\n")
-            mqtt_client = None
-
 
 
 async def main():
-    await init_mqtt()
     tasks = []
     for server in config.servers:
         tasks.append(asyncio.create_task(
