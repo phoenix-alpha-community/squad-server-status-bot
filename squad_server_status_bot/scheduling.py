@@ -23,20 +23,10 @@ def init_scheduler():
     sys.stdout.write("done\n")
 
 def delayed_execute(func, args, timedelta):
-    exec_time = datetime.now(config.TIMEZONE) + timedelta
+    exec_time = datetime.now() + timedelta
 
     id = _scheduler.add_job(_execute_wrapper, 'date',
             args=[func]+args, run_date = exec_time).id
-    return id
-
-def daily_execute(func, args=[], *, misfire_grace_time_hours=1,
-                  hour=None, minute=None, second=None):
-    misfire_grace_time_seconds = misfire_grace_time_hours * 3600
-
-    id = _scheduler.add_job(_execute_wrapper, 'cron',
-            args=[func]+args, hour=hour, minute=minute, second=second,
-            timezone=config.TIMEZONE,
-            misfire_grace_time=misfire_grace_time_seconds).id
     return id
 
 def interval_execute(func, args=[], *, misfire_grace_time_seconds=1,
@@ -44,7 +34,6 @@ def interval_execute(func, args=[], *, misfire_grace_time_seconds=1,
 
     id = _scheduler.add_job(_execute_wrapper, 'interval',
             args=[func]+args, seconds=interval_seconds,
-            timezone=config.TIMEZONE,
             misfire_grace_time=misfire_grace_time_seconds).id
     return id
 

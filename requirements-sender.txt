@@ -1,6 +1,0 @@
-pywin32
-pytz
-jsonpickle
-urllib3
-hbmqtt
-tzlocal

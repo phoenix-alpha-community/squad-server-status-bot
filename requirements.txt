@@ -2,8 +2,6 @@ discord
 steamquery
 asyncio
 ZODB
-BTrees
 pytz
 transaction
 apscheduler
-hbmqtt

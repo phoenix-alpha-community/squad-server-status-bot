@@ -1,16 +1,13 @@
-import BTrees
 import config
 import persistent
 import sys
 import transaction
 import ZODB
-from BTrees.OOBTree import TreeSet
-from dataclasses import dataclass
 
 class _Database(persistent.Persistent):
 
     def __init__(self):
-        self.server_messages = persistent.list.PersistentList()
+        self.server_message_ids = persistent.list.PersistentList()
 
 
 sys.stdout.write("Starting database...")
