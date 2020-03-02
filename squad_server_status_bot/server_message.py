@@ -1,11 +1,14 @@
 import discord
-from steam import SteamQuery
+# TODO Use package on PyPI once it's updated
+from custom_steam import SteamQuery
 
 
 async def get_server_embed(server):
     '''Queries the server information and creates a Discord embed for it.'''
 
-    server_info = SteamQuery(server.host, server.qport).query_game_server()
+    steam_query = SteamQuery(server.host, server.qport)
+    server_info = steam_query.query_server_info()
+    server_config = steam_query.query_server_config()
     quicklink = f"{server.host}:{server.qport}"
 
     if not server_info["online"]:
@@ -25,9 +28,14 @@ async def get_server_embed(server):
     # Player count
     # extra formatting for queue
     # PLAYER_COUNT / MAX_PLAYERS (+ QUEUE)
-    players = min(server_info["max_players"], server_info["players"])
-    queue = server_info['players'] - server_info['max_players']
-    player_count_str = f"{players}/{server_info['max_players']}"
+
+    # we have to use SteamQuery's config set here because Squad server don't
+    # report the correct player count with the A2S_INFO command
+    players     = int(server_config["PlayerCount_i"])
+    max_players = server_info["max_players"]
+    queue       = int(server_config["PublicQueue_i"]) \
+                + int(server_config["ReservedQueue_i"])
+    player_count_str = f"{players}/{max_players}"
     if queue > 0:
         player_count_str += f" (+{queue})"
     embed.add_field(name='Player Count', value=player_count_str)

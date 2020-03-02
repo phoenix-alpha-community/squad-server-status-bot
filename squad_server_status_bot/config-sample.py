@@ -8,10 +8,10 @@ SERVER_INFO_CHANNEL_ID          = 658822233128566794
 # Server details
 SERVER_DETAILS                  = [
     # HOST          , QPORT, GAME_PORT, FALLBACK NAME
-    ("167.88.11.228", 27165, 7787,      "Fear and Terror #1"), # public 1 (NYC)
-    ("104.194.8.111", 27165, 7787,      "Fear and Terror #2"), # public 2 (LA)
-    ("104.194.8.111", 27195, 7790,      "Fear and Terror #3"), # public 3 (LA)
-    ("185.38.151.16", 27165, 7787,      "Fear and Terror EU"), # public EU
+    ("209.222.98.15", 27165, 7787,      "Fear and Terror #1 | NYC"), # public 1 (NYC)
+    ("209.222.98.15", 27205, 7791,      "Fear and Terror #2 | NYC"), # public 2 (NYC)
+    ("104.194.8.111", 27195, 7790,      "Fear and Terror #3 | LA"), # public 3 (LA)
+    ("185.38.151.16", 27165, 7787,      "Fear and Terror EU | LON"), # public EU
 ]
 
 # Database
