@@ -13,6 +13,7 @@ from discord.ext import commands
 from server_message import get_server_embed
 
 bot = commands.Bot(command_prefix=config.BOT_CMD_PREFIX)
+scheduler_initialized = False
 
 
 @bot.event
@@ -25,10 +26,15 @@ async def on_ready():
 
     scheduling.init_scheduler()
 
-    # schedule tasks
-    scheduling.interval_execute(update_messages, [],
-                            interval_seconds=config.UPDATE_INTERVAL_SECONDS)
-    await update_messages()
+    # Schedule tasks
+    # Since on_ready may run multiple times due to reconnects, we need to make
+    # sure we only schedule jobs once
+    global scheduler_initialized
+    if not scheduler_initialized:
+        scheduler_initialized = True
+        scheduling.interval_execute(update_messages, [],
+                                interval_seconds=config.UPDATE_INTERVAL_SECONDS)
+        await update_messages()
 
 
 async def update_messages():

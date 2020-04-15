@@ -2,6 +2,7 @@ import discord
 # TODO Use package on PyPI once it's updated
 from custom_steam import SteamQuery
 
+from pprint import pprint
 
 async def get_server_embed(server):
     '''Queries the server information and creates a Discord embed for it.'''
@@ -31,19 +32,27 @@ async def get_server_embed(server):
 
     # we have to use SteamQuery's config set here because Squad server don't
     # report the correct player count with the A2S_INFO command
-    players     = int(server_config["PlayerCount_i"])
-    max_players = server_info["max_players"]
-    queue       = int(server_config["PublicQueue_i"]) \
-                + int(server_config["ReservedQueue_i"])
-    player_count_str = f"{players}/{max_players}"
-    if queue > 0:
-        player_count_str += f" (+{queue})"
+    if "PlayerCount_i" not in server_config:
+        print("[DEBUG ERROR] PlayerCount_i not in server_config!")
+        pprint(server_config)
+        players = 0
+        player_count_str = f"Unknown"
+    else:
+        players     = int(server_config["PlayerCount_i"])
+        max_players = server_info["max_players"]
+        queue       = int(server_config["PublicQueue_i"]) \
+                    + int(server_config["ReservedQueue_i"])
+        player_count_str = f"{players}/{max_players}"
+        if queue > 0:
+            player_count_str += f" (+{queue})"
+
     embed.add_field(name='Player Count', value=player_count_str)
     embed.color = get_embed_color(players)
 
     # Map, Quicklink
     embed.add_field(name='Map', value=f"{map}", inline=True)
-    embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}", inline=False)
+    embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}",
+            inline=False)
 
     # Dynamic image
     #with open(r"images/bg1.jpg", "rb") as f:

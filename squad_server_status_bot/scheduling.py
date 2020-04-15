@@ -32,6 +32,7 @@ def delayed_execute(func, args, timedelta):
 def interval_execute(func, args=[], *, misfire_grace_time_seconds=1,
                   interval_seconds):
 
+    print(f"[NEW_SCHED] {func} -- {args} EVERY {interval_seconds}")
     id = _scheduler.add_job(_execute_wrapper, 'interval',
             args=[func]+args, seconds=interval_seconds,
             misfire_grace_time=misfire_grace_time_seconds).id
