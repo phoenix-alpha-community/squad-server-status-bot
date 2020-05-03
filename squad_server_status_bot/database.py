@@ -7,7 +7,8 @@ import ZODB
 class _Database(persistent.Persistent):
 
     def __init__(self):
-        self.server_message_ids = persistent.list.PersistentList()
+        self.squad_server_message_ids = persistent.list.PersistentList()
+        self.post_server_message_ids = persistent.list.PersistentList()
 
 
 sys.stdout.write("Starting database...")
