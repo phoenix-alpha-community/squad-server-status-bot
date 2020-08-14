@@ -24,7 +24,7 @@ async def get_server_embed(server):
     # Thumbnail
     map = server_info['map']
     map_url_name = translate_map_name(map)
-    embed.set_thumbnail(url=f"https://squadmaps.com/full/{map_url_name}.jpg")
+    embed.set_thumbnail(url=f"https://squadmaps.com/img/maps/full_size/{map_url_name}.jpg")
 
     # Player count
     # extra formatting for queue
