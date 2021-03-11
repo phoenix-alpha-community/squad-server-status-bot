@@ -34,7 +34,7 @@ async def on_ready():
         scheduler_initialized = True
         scheduling.interval_execute(update_squad_messages, [],
                                     interval_seconds=config.UPDATE_INTERVAL_SECONDS)
-        scheduling.interval_execute(post_update_messages, [],
+        scheduling.interval_execute(update_post_messages, [],
                                     interval_seconds=config.UPDATE_INTERVAL_SECONDS)
         await update_squad_messages()
         await update_post_messages()
