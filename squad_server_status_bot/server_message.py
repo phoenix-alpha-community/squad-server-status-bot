@@ -14,7 +14,7 @@ async def get_server_embed(server):
     server_config = steam_query.query_server_config()
     quicklink = f"{server.host}:{server.qport}"
 
-    if not server_info["online"]:
+    if "error" in server_info or not server_info["online"]:
         # Server offline, use fallback name
         embed = discord.Embed(title=server.fallback_name, color=0x222222)
         embed.add_field(name="Status", value="Offline")
