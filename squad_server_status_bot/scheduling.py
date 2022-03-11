@@ -1,11 +1,10 @@
 import asyncio
-import config
-import pytz
 import sys
+from datetime import datetime
+
 import transaction
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
-from datetime import datetime, timedelta
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 jobstores = {"default": MemoryJobStore()}  # no persistent jobs
 
@@ -32,7 +31,6 @@ def delayed_execute(func, args, timedelta):
 
 
 def interval_execute(func, args=[], *, misfire_grace_time_seconds=1, interval_seconds):
-
     print(f"[NEW_SCHED] {func} -- {args} EVERY {interval_seconds}")
     id = _scheduler.add_job(
         _execute_wrapper,

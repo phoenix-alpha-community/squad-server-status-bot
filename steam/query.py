@@ -1,10 +1,11 @@
 import functools
 import socket
 import struct
-from deprecation import deprecated
-from steam.player import Player
-from typing import List, Tuple
+from typing import List
 
+from deprecation import deprecated
+
+from steam.player import Player
 
 HEADER_NO_SPLIT = b"\xFF\xFF\xFF\xFF"
 HEADER_SPLIT = b"\xFF\xFF\xFF\xFE"
@@ -199,7 +200,7 @@ class SteamQuery:
 
     @deprecated(
         details="Use query_game_server for the first query and store "
-        "the result yourself."
+                "the result yourself."
     )
     def return_last_data(self):
         """

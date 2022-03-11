@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-import asyncio
-import config
-import discord
-import scheduling
-import traceback
-import transaction
-from BTrees.OOBTree import TreeSet
-from database import db
 from datetime import datetime
+
+import discord
+import transaction
 from discord.ext import commands
+
+import config
+import scheduling
+from database import db
 from server_message import get_server_embed
 
 bot = commands.Bot(command_prefix=config.BOT_CMD_PREFIX)
@@ -32,14 +31,22 @@ async def on_ready():
     global scheduler_initialized
     if not scheduler_initialized:
         scheduler_initialized = True
-        scheduling.interval_execute(
-            update_squad_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
-        )
-        scheduling.interval_execute(
-            update_post_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
-        )
-        await update_squad_messages()
-        await update_post_messages()
+
+        if len(config.squadservers) > 0:
+            scheduling.interval_execute(
+                update_squad_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
+            )
+            await update_squad_messages()
+        else:
+            print("No Squad servers configured. Skipping Squad status updating.")
+
+        if len(config.postservers) > 0:
+            scheduling.interval_execute(
+                update_post_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
+            )
+            await update_post_messages()
+        else:
+            print("No Post Scriptum servers configured. Skipping Post Scriptum status updating.")
 
 
 async def update_squad_messages():

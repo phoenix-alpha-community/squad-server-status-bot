@@ -1,8 +1,10 @@
-import config
-import persistent
 import sys
-import transaction
+
 import ZODB
+import persistent
+import transaction
+
+import config
 
 
 class _Database(persistent.Persistent):
