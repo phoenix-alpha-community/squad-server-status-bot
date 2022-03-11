@@ -204,3 +204,5 @@ fabric.properties
 config.py
 *.fs*
 *.sqlite
+
+.idea

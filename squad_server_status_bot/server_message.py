@@ -1,11 +1,16 @@
-import discord
-# TODO Use package on PyPI once it's updated
-from custom_steam import SteamQuery
-
+import asyncio
 from pprint import pprint
 
+import discord
+
+from config import squadservers
+
+# TODO Use package on PyPI once it's updated
+from steam import SteamQuery
+
+
 async def get_server_embed(server):
-    '''Queries the server information and creates a Discord embed for it.'''
+    """Queries the server information and creates a Discord embed for it."""
 
     steam_query = SteamQuery(server.host, server.qport)
     server_info = steam_query.query_server_info()
@@ -22,9 +27,11 @@ async def get_server_embed(server):
     embed = discord.Embed(title=server_info["name"])
 
     # Thumbnail
-    map = server_info['map']
+    map = server_info["map"]
     map_url_name = translate_map_name(map)
-    embed.set_thumbnail(url=f"https://squadmaps.com/img/maps/full_size/{map_url_name}.jpg")
+    embed.set_thumbnail(
+        url=f"https://squadmaps.com/img/maps/full_size/{map_url_name}.jpg"
+    )
 
     # Player count
     # extra formatting for queue
@@ -38,33 +45,35 @@ async def get_server_embed(server):
         players = 0
         player_count_str = f"Unknown"
     else:
-        players     = int(server_config["PlayerCount_i"])
+        players = int(server_config["PlayerCount_i"])
         max_players = server_info["max_players"]
-        queue       = int(server_config["PublicQueue_i"]) \
-                    + int(server_config["ReservedQueue_i"])
+        queue = int(server_config["PublicQueue_i"]) + int(
+            server_config["ReservedQueue_i"]
+        )
         player_count_str = f"{players}/{max_players}"
         if queue > 0:
             player_count_str += f" (+{queue})"
 
-    embed.add_field(name='Player Count', value=player_count_str)
+    embed.add_field(name="Player Count", value=player_count_str)
     embed.color = get_embed_color(players)
 
     # Map, Quicklink
-    embed.add_field(name='Map', value=f"{map}", inline=True)
-    embed.add_field(name='Quick Connect', value=f"steam://connect/{quicklink}",
-            inline=False)
+    embed.add_field(name="Map", value=f"{map}", inline=True)
+    embed.add_field(
+        name="Quick Connect", value=f"steam://connect/{quicklink}", inline=False
+    )
 
     # Dynamic image
-    #with open(r"images/bg1.jpg", "rb") as f:
+    # with open(r"images/bg1.jpg", "rb") as f:
     #    shit = await channel.send(file=f)
-    #print(shit)
+    # print(shit)
 
     return embed
 
 
 def translate_map_name(name):
-    '''Translates map names supplied by SteamQuery into their file names on
-    squadmaps.com'''
+    """Translates map names supplied by SteamQuery into their file names on
+    squadmaps.com"""
     # Strip prefixes
     name = name.replace("CAF_", "")
     name = name.replace("SPM_", "")
@@ -82,8 +91,8 @@ def translate_map_name(name):
 
 def get_embed_color(player_count):
     if player_count >= 41:
-        return 0x20EE50 # GREEN, popped
+        return 0x20EE50  # GREEN, popped
     if player_count >= 1:
-        return 0xEE9420 # ORANGE, not popped
+        return 0xEE9420  # ORANGE, not popped
     if player_count == 0:
-        return 0xee2020 # RED, dead
+        return 0xEE2020  # RED, dead
