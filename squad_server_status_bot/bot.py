@@ -19,10 +19,10 @@ scheduler_initialized = False
 @bot.event
 async def on_ready():
     config.init_config(bot)
-    print('Logged in as')
+    print("Logged in as")
     print(bot.user.name)
     print(bot.user.id)
-    print('------')
+    print("------")
 
     scheduling.init_scheduler()
 
@@ -32,10 +32,12 @@ async def on_ready():
     global scheduler_initialized
     if not scheduler_initialized:
         scheduler_initialized = True
-        scheduling.interval_execute(update_squad_messages, [],
-                                    interval_seconds=config.UPDATE_INTERVAL_SECONDS)
-        scheduling.interval_execute(update_post_messages, [],
-                                    interval_seconds=config.UPDATE_INTERVAL_SECONDS)
+        scheduling.interval_execute(
+            update_squad_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
+        )
+        scheduling.interval_execute(
+            update_post_messages, [], interval_seconds=config.UPDATE_INTERVAL_SECONDS
+        )
         await update_squad_messages()
         await update_post_messages()
 
@@ -67,8 +69,7 @@ async def update_squad_messages():
         wipe_messages = True
 
     if wipe_messages:
-        await channel.purge(limit=100,
-                            check=lambda msg: msg.author == bot.user)
+        await channel.purge(limit=100, check=lambda msg: msg.author == bot.user)
         db.squad_server_message_ids.clear()
 
     # try to re-use old messages
@@ -76,7 +77,7 @@ async def update_squad_messages():
         for m_id, embed in zip(db.squad_server_message_ids, embeds):
             message = await channel.fetch_message(m_id)
             await message.edit(embed=embed)
-    else: # otherwise, just create new ones
+    else:  # otherwise, just create new ones
         for embed in embeds:
             message = await channel.send(embed=embed)
             db.squad_server_message_ids.append(message.id)
@@ -111,8 +112,7 @@ async def update_post_messages():
         wipe_messages = True
 
     if wipe_messages:
-        await channel.purge(limit=100,
-                            check=lambda msg: msg.author == bot.user)
+        await channel.purge(limit=100, check=lambda msg: msg.author == bot.user)
         db.post_server_message_ids.clear()
 
     # try to re-use old messages
@@ -120,12 +120,13 @@ async def update_post_messages():
         for m_id, embed in zip(db.post_server_message_ids, embeds):
             message = await channel.fetch_message(m_id)
             await message.edit(embed=embed)
-    else: # otherwise, just create new ones
+    else:  # otherwise, just create new ones
         for embed in embeds:
             message = await channel.send(embed=embed)
             db.post_server_message_ids.append(message.id)
 
     transaction.commit()
+
 
 if __name__ == "__main__":
     bot.run(config.BOT_TOKEN)

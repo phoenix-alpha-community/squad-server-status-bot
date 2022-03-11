@@ -4,8 +4,8 @@ import sys
 import transaction
 import ZODB
 
-class _Database(persistent.Persistent):
 
+class _Database(persistent.Persistent):
     def __init__(self):
         self.squad_server_message_ids = persistent.list.PersistentList()
         self.post_server_message_ids = persistent.list.PersistentList()

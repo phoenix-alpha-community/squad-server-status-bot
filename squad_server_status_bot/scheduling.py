@@ -7,36 +7,42 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.memory import MemoryJobStore
 from datetime import datetime, timedelta
 
-jobstores = {
-    'default': MemoryJobStore() # no persistent jobs
-}
+jobstores = {"default": MemoryJobStore()}  # no persistent jobs
 
 _scheduler = None
 
+
 def init_scheduler():
-    '''Initializes the scheduler. Must be run **after**
-    config has been initialized.'''
+    """Initializes the scheduler. Must be run **after**
+    config has been initialized."""
     sys.stdout.write("Starting scheduler...")
     global _scheduler
     _scheduler = AsyncIOScheduler(jobstores=jobstores)
     _scheduler.start()
     sys.stdout.write("done\n")
 
+
 def delayed_execute(func, args, timedelta):
     exec_time = datetime.now() + timedelta
 
-    id = _scheduler.add_job(_execute_wrapper, 'date',
-            args=[func]+args, run_date = exec_time).id
+    id = _scheduler.add_job(
+        _execute_wrapper, "date", args=[func] + args, run_date=exec_time
+    ).id
     return id
 
-def interval_execute(func, args=[], *, misfire_grace_time_seconds=1,
-                  interval_seconds):
+
+def interval_execute(func, args=[], *, misfire_grace_time_seconds=1, interval_seconds):
 
     print(f"[NEW_SCHED] {func} -- {args} EVERY {interval_seconds}")
-    id = _scheduler.add_job(_execute_wrapper, 'interval',
-            args=[func]+args, seconds=interval_seconds,
-            misfire_grace_time=misfire_grace_time_seconds).id
+    id = _scheduler.add_job(
+        _execute_wrapper,
+        "interval",
+        args=[func] + args,
+        seconds=interval_seconds,
+        misfire_grace_time=misfire_grace_time_seconds,
+    ).id
     return id
+
 
 # wrap function to include transaction.commit
 async def _execute_wrapper(func, *args, **kwargs):
@@ -46,6 +52,6 @@ async def _execute_wrapper(func, *args, **kwargs):
     transaction.commit()
     return ret
 
+
 def deschedule(job_id):
     _scheduler.remove_job(job_id)
-
