@@ -1,8 +1,6 @@
 from pprint import pprint
 
 import discord
-
-# TODO Use package on PyPI once it's updated
 from steam import SteamQuery
 
 

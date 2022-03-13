@@ -5,3 +5,4 @@ pytz
 transaction
 apscheduler
 deprecation
+steamquery>=1.0.2
