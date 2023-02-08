@@ -1,28 +1,30 @@
 from pprint import pprint
 
+import a2s
 import discord
-from steam import SteamQuery
+
+
+# from custom_steam.query import SteamQuery
 
 
 async def get_server_embed(server):
     """Queries the server information and creates a Discord embed for it."""
 
-    steam_query = SteamQuery(server.host, server.qport)
-    server_info = steam_query.query_server_info()
-    server_config = steam_query.query_server_config()
-    quicklink = f"{server.host}:{server.qport}"
-
-    if "error" in server_info or not server_info["online"]:
+    try:
+        server_info = a2s.info((server.host, server.qport))
+        server_rules = a2s.rules((server.host, server.qport))
+        quicklink = f"{server.host}:{server.qport}"
+    except TimeoutError:
         # Server offline, use fallback name
         embed = discord.Embed(title=server.fallback_name, color=0x222222)
         embed.add_field(name="Status", value="Offline")
         return embed
 
     # Create embed
-    embed = discord.Embed(title=server_info["name"])
+    embed = discord.Embed(title=server_info.server_name)
 
     # Thumbnail
-    map = server_info["map"]
+    map = server_info.map_name
     map_url_name = translate_map_name(map)
     embed.set_thumbnail(
         url=f"https://squadmaps.com/img/maps/full_size/{map_url_name}.jpg"
@@ -34,16 +36,16 @@ async def get_server_embed(server):
 
     # we have to use SteamQuery's config set here because Squad server don't
     # report the correct player count with the A2S_INFO command
-    if "PlayerCount_i" not in server_config:
+    if "PlayerCount_i" not in server_rules:
         print("[DEBUG ERROR] PlayerCount_i not in server_config!")
-        pprint(server_config)
+        pprint(server_rules)
         players = 0
         player_count_str = f"Unknown"
     else:
-        players = int(server_config["PlayerCount_i"])
-        max_players = server_info["max_players"]
-        queue = int(server_config["PublicQueue_i"]) + int(
-            server_config["ReservedQueue_i"]
+        players = int(server_rules["PlayerCount_i"])
+        max_players = server_info.max_players
+        queue = int(server_rules["PublicQueue_i"]) + int(
+            server_rules["ReservedQueue_i"]
         )
         player_count_str = f"{players}/{max_players}"
         if queue > 0:
